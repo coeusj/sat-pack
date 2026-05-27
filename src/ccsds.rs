@@ -17,9 +17,9 @@ impl CCSDS {
             self.version,
             self.r#type,
             self.secondary_header,
+            self.apid,
             self.sequence_flags,
             self.sequence_count,
-            self.apid,
             self.payload_len,
             self.altitude,
             self.velocity
@@ -78,7 +78,7 @@ pub fn read(packet: Vec<u16>) -> CCSDS {
     let version = ((packet_id >> 13) & 0b111) as u8;
     let r#type = ((packet_id >> 12) & 0b1) as u8;
     let secondary_header = ((packet_id >> 13) & 0b1) as u8;
-    let apid = packet_id & 0b11111111111;
+    let apid = packet_id & 0b0000_0111_1111_1111;
 
     let packet_sequence_control = &packet[1];
     let sequence_flags = ((packet_sequence_control >> 14) & 0b11) as u8;
