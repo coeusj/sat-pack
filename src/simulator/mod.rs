@@ -1,29 +1,25 @@
-#[derive(Debug)]
-pub struct CCSDS {
-    version: u8,
-    r#type: u8,
-    secondary_header: u8,
-    apid: u16,
-    sequence_flags: u8,
-    sequence_count: u16,
-    payload_len: u16,
-    altitude: f64,
-    velocity: f64
+use std::thread;
+use std::time::Duration;
+
+use ccsds::Packet;
+
+pub mod ccsds;
+
+pub struct Simulator {
+    pub packet: Packet
 }
 
-impl CCSDS {
-    pub fn print(&self) {
-        println!("[\n Version: {}\n Type: {}\n Secondary Header: {}\n APID: {}\n Sequence Flags: {}\n Sequence Count: {}\n Length: {}\n Altitude: {}\n Velocity: {}\n]",
-            self.version,
-            self.r#type,
-            self.secondary_header,
-            self.apid,
-            self.sequence_flags,
-            self.sequence_count,
-            self.payload_len,
-            self.altitude,
-            self.velocity
-        );
+impl Simulator {
+    pub fn start(&mut self, loop_count: usize) {
+        for _ in 0..loop_count {
+            self.packet.altitude += 1.0;
+            self.packet.velocity += 1.0;
+            self.packet.print();
+
+            thread::sleep(Duration::from_millis(500));
+        }
+
+        println!("Simulation done!");
     }
 }
 
@@ -73,7 +69,7 @@ pub fn generate() -> Vec<u16> {
     return res;
 }
 
-pub fn read(packet: Vec<u16>) -> CCSDS {
+pub fn read(packet: Vec<u16>) -> Packet {
     let packet_id = &packet[0];
     let version = ((packet_id >> 13) & 0b111) as u8;
     let r#type = ((packet_id >> 12) & 0b1) as u8;
@@ -81,7 +77,7 @@ pub fn read(packet: Vec<u16>) -> CCSDS {
     let apid = packet_id & 0b0000_0111_1111_1111;
 
     let packet_sequence_control = &packet[1];
-    let sequence_flags = ((packet_sequence_control >> 14) & 0b11) as u8;
+    let sequence_flags = (packet_sequence_control >> 14) & 0b11;
     let sequence_count = packet_sequence_control & 0b11111111111111;
 
     let packet_length = &packet[2];
@@ -103,14 +99,14 @@ pub fn read(packet: Vec<u16>) -> CCSDS {
         velocity_val = f64::from_be_bytes(byte_array);
     }
 
-    return CCSDS {
-        version:  version,
+    Packet {
+        version: version,
         r#type: r#type,
         secondary_header: secondary_header,
         apid: apid,
         sequence_flags: sequence_flags,
         sequence_count: sequence_count,
-        payload_len: *packet_length,
+        payload_length: *packet_length,
         altitude: altitude_val,
         velocity: velocity_val
     }
