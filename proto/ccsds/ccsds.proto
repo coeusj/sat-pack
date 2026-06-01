@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package grpc.ccsds;
+
+message SatRequest {
+    string sat_id = 1;
+}
+
+message SatResponse {
+    bytes packet = 1;
+}
+
+service Sat {
+    rpc SatPackets(SatRequest) returns (stream SatResponse) {}
+}
