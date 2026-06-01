@@ -1,0 +1,13 @@
+[sim_conf]
+loop_delay = 10
+
+[ccsds_conf]
+version = 0
+type = 0
+secondary_header = 0
+apid = 10
+sequence_flags = 3
+sequence_count = 1
+payload_length = 15
+altitude = 1240.33
+velocity = 123.35

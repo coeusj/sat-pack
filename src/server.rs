@@ -4,12 +4,12 @@ use tokio::sync::mpsc;
 use tokio_stream::{Stream, wrappers::ReceiverStream};
 use tonic::{Request, Response, Status, transport::Server};
 
-// 1. Fixed module path generation matching your proto package
+pub mod simulator;
+
 pub mod pb {
     tonic::include_proto!("grpc.ccsds");
 }
 
-// Bring types safely into scope based on how tonic generates packages
 use pb::{SatRequest, SatResponse};
 
 pub struct SimSatServer {}
@@ -27,13 +27,28 @@ impl pb::sat_server::Sat for SimSatServer {
     ) -> SatResult<Self::SatPacketsStream> {
         println!("Client connected from {:?}", request.remote_addr());
 
-        // Extract the target ID before moving ownership into the spawn block
-        let sat_id_bytes = request.into_inner().sat_id.into_bytes();
-
+        let _ = request.into_inner().sat_id.into_bytes();
         let (tx, rx) = mpsc::channel(128);
-        
-        // 2. Fixed Spawn Block: Clean async loops with explicit sleep throttling
+
         tokio::spawn(async move {
+            let mut sim = simulator::Simulator::new();
+            println!("Simulation starting");
+
+            // Safety check: If the gRPC layer drops the receiver, abort immediately
+            if tx.is_closed() {
+                return;
+            }
+
+            let response_packet = SatResponse {
+                packet: sim.packet.to_bin_vec()
+            };
+
+            // Try to queue the item to the client receiver
+            if tx.send(Ok(response_packet)).await.is_err() {
+                // Receiver dropped (Client disconnected)
+                return;
+            }
+
             loop {
                 // Safety check: If the gRPC layer drops the receiver, abort immediately
                 if tx.is_closed() {
@@ -41,7 +56,7 @@ impl pb::sat_server::Sat for SimSatServer {
                 }
 
                 let response_packet = SatResponse {
-                    packet: sat_id_bytes.clone(),
+                    packet: sim.update().to_bin_vec()
                 };
 
                 // Try to queue the item to the client receiver
@@ -50,8 +65,7 @@ impl pb::sat_server::Sat for SimSatServer {
                     break;
                 }
 
-                // 3. Replaced `.throttle()` with clean, native async sleep
-                tokio::time::sleep(Duration::from_millis(200)).await;
+                tokio::time::sleep(Duration::from_millis(sim.loop_delay)).await;
             }
             println!("Client disconnected");
         });
@@ -68,12 +82,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let server = SimSatServer {};
     let addr = "localhost:50051".to_socket_addrs()?.next().unwrap();
 
-    println!("🚀 Server successfully listening on {}", addr);
+    println!("🛰️ Server listening on {}", addr);
 
     Server::builder()
         .add_service(pb::sat_server::SatServer::new(server))
-        .serve(addr)
+        .serve_with_shutdown(addr, shutdown_signal())
         .await?;
 
     Ok(())
+}
+
+async fn shutdown_signal() {
+    tokio::signal::ctrl_c()
+        .await
+        .expect("Ctrl+C signal handler failed")
 }

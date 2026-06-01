@@ -25,23 +25,23 @@ impl Packet {
         );
     }
 
-    pub fn to_bin_vec(&self) -> Vec<u16> {
-        let mut res: Vec<u16> = Vec::new();
+    pub fn to_bin_vec(&self) -> Vec<u8> {
+        let mut res: Vec<u8> = Vec::new();
 
         let packet_id = ((self.version as u16) << 13) | ((self.r#type as u16) << 12) | ((self.secondary_header as u16) << 11) | self.apid;
-        res.push(packet_id);
+        res.extend(packet_id.to_be_bytes());
 
         let packet_sequence: u16 = (self.sequence_flags << 14) | self.sequence_count;
-        res.push(packet_sequence);
+        res.extend(packet_sequence.to_be_bytes());
 
-        res.push(self.payload_length);
+        res.extend(self.payload_length.to_be_bytes());
 
         let altitude_bytes = self.altitude.to_be_bytes();
         for i in (0..altitude_bytes.len()).step_by(2) {
             let first = (altitude_bytes[i] as u16) << 8;
             let second = altitude_bytes[i+1] as u16;
             let chunk = first | second;
-            res.push(chunk);
+            res.extend(chunk.to_be_bytes());
         }
 
         let velocity_bytes = self.velocity.to_be_bytes();
@@ -49,7 +49,7 @@ impl Packet {
             let first = (velocity_bytes[i] as u16) << 8;
             let second = velocity_bytes[i+1] as u16;
             let chunk = first | second;
-            res.push(chunk);
+            res.extend(chunk.to_be_bytes());
         }
 
         return res;

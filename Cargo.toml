@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+config = "0.15.23"
 prost = "0.14.3"
+serde = {version = "1.0.228", features = ["derive"]}
 tokio = {version = "1.52.3", features = ["full"]}
 tokio-stream = "0.1.18"
 tonic = {version = "0.14.6", features = ["codegen", "transport"]}
