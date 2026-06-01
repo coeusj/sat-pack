@@ -17,3 +17,10 @@ cargo build
 ```bash
 cargo run --bin grpc-server
 ```
+
+## Simulation configuration
+
+Configuration file: `Settings.toml`
+
+Section `[ccsds_conf]`: you can modify the values of the CCSDS packet.
+Section `[sim_conf]`: you can modify the delay in the update/send loop.
