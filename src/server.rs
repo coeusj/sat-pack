@@ -67,6 +67,7 @@ impl pb::sat_server::Sat for SimSatServer {
 
                 tokio::time::sleep(Duration::from_millis(sim.loop_delay)).await;
             }
+
             println!("Client disconnected");
         });
 

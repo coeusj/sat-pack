@@ -55,7 +55,7 @@ impl Simulator {
     pub fn new() -> Self {
         let settings = match Settings::new() {
             Ok(settings) => {
-                println!("Simulation configuration loaded successfully!");
+                println!("Simulation configuration loaded");
                 settings
             }
             Err(err) => {

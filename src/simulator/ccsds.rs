@@ -37,20 +37,10 @@ impl Packet {
         res.extend(self.payload_length.to_be_bytes());
 
         let altitude_bytes = self.altitude.to_be_bytes();
-        for i in (0..altitude_bytes.len()).step_by(2) {
-            let first = (altitude_bytes[i] as u16) << 8;
-            let second = altitude_bytes[i+1] as u16;
-            let chunk = first | second;
-            res.extend(chunk.to_be_bytes());
-        }
-
+        res.extend(altitude_bytes);
+ 
         let velocity_bytes = self.velocity.to_be_bytes();
-        for i in (0..velocity_bytes.len()).step_by(2) {
-            let first = (velocity_bytes[i] as u16) << 8;
-            let second = velocity_bytes[i+1] as u16;
-            let chunk = first | second;
-            res.extend(chunk.to_be_bytes());
-        }
+        res.extend(velocity_bytes);
 
         return res;
     }
